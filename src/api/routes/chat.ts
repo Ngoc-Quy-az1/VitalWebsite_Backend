@@ -6,6 +6,7 @@ import { Logger } from 'winston';
 import { Repository } from 'typeorm';
 import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
+import { clearConversationMemory } from '@/services/conversationMemory';
 
 const route = Router();
 
@@ -119,6 +120,7 @@ export default (app: Router) => {
         }
 
         await chatSessionRepo.remove(session);
+        clearConversationMemory(userId, sessionId);
 
         return res.status(200).json({ success: true, message: 'Chat session deleted successfully' });
       } catch (e) {

@@ -9,6 +9,10 @@ import { Repository } from 'typeorm';
 import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
 import { Logger } from 'winston';
+import {
+  getConversationMemory,
+  updateConversationMemory,
+} from '@/services/conversationMemory';
 
 const route = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -35,6 +39,36 @@ export default (app: Router) => {
     }
   };
 
+  const findUserSession = async (
+    chatSessionRepo: Repository<ChatSession>,
+    sessionId: string,
+    userId: string,
+  ): Promise<ChatSession | null> => {
+    if (!sessionId || !userId) {
+      return null;
+    }
+    return chatSessionRepo.findOne({ where: { id: sessionId, user_id: userId } });
+  };
+
+  const buildChatbotPayload = (
+    body: any,
+    userId: string,
+    sessionId?: string,
+    memoryContext = '',
+  ) => ({
+    query: body.query,
+    top_k: body.top_k,
+    disease_name: body.disease_name,
+    section_type: body.section_type,
+    source_type: body.source_type,
+    biomarker: body.biomarker,
+    include_debug: body.include_debug,
+    conversation_id: sessionId || null,
+    user_id: userId || null,
+    memory_context: memoryContext,
+    enable_web_search: body.enable_web_search !== undefined ? body.enable_web_search : true,
+  });
+
   // Endpoint /1 -> Proxy to chatbot /chat/answer (Sync QA)
   route.post(
     '/1',
@@ -58,21 +92,26 @@ export default (app: Router) => {
           return res.status(422).json({ message: 'query is required' });
         }
 
+        const userId = req.currentUser.id;
+        const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
+        let verifiedSession: ChatSession | null = null;
+        if (sessionId) {
+          verifiedSession = await findUserSession(chatSessionRepo, sessionId, userId);
+          if (!verifiedSession) {
+            return res.status(404).json({ message: 'Chat session not found' });
+          }
+        }
+        const memoryContext = verifiedSession ? getConversationMemory(userId, sessionId) : '';
+
         // Forward to python chatbot_api
-        const response = await axios.post(`${config.vitalAI.chatbotApiUrl}/chat/answer`, {
-          query,
-          top_k,
-          disease_name,
-          section_type,
-          source_type,
-          biomarker,
-          include_debug,
-        });
+        const response = await axios.post(
+          `${config.vitalAI.chatbotApiUrl}/chat/answer`,
+          buildChatbotPayload(req.body, userId, sessionId, memoryContext),
+        );
 
         // Save history in background if sessionId is provided
         if (sessionId) {
           const messageRepo = Container.get('messageRepository') as Repository<Message>;
-          const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
 
           const answerText = response.data.answer || '';
 
@@ -93,6 +132,7 @@ export default (app: Router) => {
           });
 
           await updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
+          await updateConversationMemory(config.vitalAI.chatbotApiUrl, userId, sessionId, query, answerText, logger);
         }
 
         return res.status(200).json(response.data);
@@ -128,6 +168,17 @@ export default (app: Router) => {
           return res.status(422).json({ message: 'query is required' });
         }
 
+        const userId = req.currentUser.id;
+        const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
+        let verifiedSession: ChatSession | null = null;
+        if (sessionId) {
+          verifiedSession = await findUserSession(chatSessionRepo, sessionId, userId);
+          if (!verifiedSession) {
+            return res.status(404).json({ message: 'Chat session not found' });
+          }
+        }
+        const memoryContext = verifiedSession ? getConversationMemory(userId, sessionId) : '';
+
         // Setup headers for SSE
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
@@ -138,15 +189,7 @@ export default (app: Router) => {
         const response = await axios({
           method: 'post',
           url: `${config.vitalAI.chatbotApiUrl}/chat/stream`,
-          data: {
-            query,
-            top_k,
-            disease_name,
-            section_type,
-            source_type,
-            biomarker,
-            include_debug,
-          },
+          data: buildChatbotPayload(req.body, userId, sessionId, memoryContext),
           responseType: 'stream',
         });
 
@@ -183,7 +226,6 @@ export default (app: Router) => {
           if (sessionId) {
             try {
               const messageRepo = Container.get('messageRepository') as Repository<Message>;
-              const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
 
               // Save user query
               await messageRepo.save({
@@ -202,6 +244,14 @@ export default (app: Router) => {
               });
 
               await updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
+              await updateConversationMemory(
+                config.vitalAI.chatbotApiUrl,
+                userId,
+                sessionId,
+                query,
+                accumulatedAnswer || 'Mình chưa tạo được câu trả lời từ hệ thống.',
+                logger,
+              );
             } catch (historyErr) {
               logger.error('Failed to save streamed history: %o', historyErr);
             }
