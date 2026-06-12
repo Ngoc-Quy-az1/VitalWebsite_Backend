@@ -8,7 +8,6 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ChatSession } from './chat-session';
-import { ChatFeedback } from './chat-feedback';
 
 @Entity('messages')
 export class Message {
@@ -33,7 +32,4 @@ export class Message {
   @ManyToOne(() => ChatSession, (session) => session.messages, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'session_id' })
   session: ChatSession;
-
-  @OneToMany(() => ChatFeedback, (feedback) => feedback.message)
-  feedbacks: ChatFeedback[];
 }

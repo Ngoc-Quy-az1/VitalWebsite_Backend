@@ -9,7 +9,6 @@ import {
 import { RefreshToken } from './refresh-token';
 import { ChatSession } from './chat-session';
 import { UploadedFile } from './uploaded-file';
-import { Document } from './document';
 import { ApiLog } from './api-log';
 import { Notification } from './notification';
 
@@ -63,9 +62,6 @@ export class User {
 
   @OneToMany(() => UploadedFile, (file) => file.user)
   uploadedFiles: UploadedFile[];
-
-  @OneToMany(() => Document, (doc) => doc.user)
-  documents: Document[];
 
   @OneToMany(() => ApiLog, (log) => log.user)
   apiLogs: ApiLog[];

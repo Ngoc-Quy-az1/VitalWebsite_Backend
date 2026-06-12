@@ -10,7 +10,6 @@ import {
 import { User } from './user';
 import { ChatSession } from './chat-session';
 import { OcrResult } from './ocr-result';
-import { Document } from './document';
 
 @Entity('uploaded_files')
 export class UploadedFile {
@@ -54,7 +53,4 @@ export class UploadedFile {
 
   @OneToMany(() => OcrResult, (ocr) => ocr.file)
   ocrResults: OcrResult[];
-
-  @OneToMany(() => Document, (doc) => doc.sourceFile)
-  documents: Document[];
 }

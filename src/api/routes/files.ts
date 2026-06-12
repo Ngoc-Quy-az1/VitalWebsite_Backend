@@ -4,6 +4,8 @@ import middlewares from '../middlewares';
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
 import multer from 'multer';
+import { DataSource } from 'typeorm';
+import { Logger } from 'winston';
 
 import { UploadedFile } from '@/models/uploaded-file';
 
@@ -32,7 +34,7 @@ export default (app: Router) => {
           return res.status(422).json({ message: 'original_filename and file_path are required' });
         }
 
-        const appDataSource = Container.get('appDataSource');
+        const appDataSource = Container.get('appDataSource') as DataSource;
         const repo = appDataSource.getRepository(UploadedFile);
 
         const record = repo.create({
@@ -50,7 +52,7 @@ export default (app: Router) => {
 
         if (session_id) {
           try {
-            const appDataSource2 = Container.get('appDataSource');
+            const appDataSource2 = Container.get('appDataSource') as DataSource;
             const messageRepo = appDataSource2.getRepository(require('@/models/message').Message);
             await messageRepo.save({
               session_id: session_id,
@@ -59,14 +61,14 @@ export default (app: Router) => {
               content: saved.file_path,
             });
           } catch (e) {
-            const logger = Container.get('logger');
+            const logger = Container.get('logger') as Logger;
             logger.error('Failed to save image message: %o', e);
           }
         }
 
         return res.status(201).json(saved);
       } catch (e) {
-        const logger = Container.get('logger');
+        const logger = Container.get('logger') as Logger;
         logger.error('Error saving image link: %o', e);
         return res.status(500).json({ detail: e.message || 'Error' });
       }
@@ -80,7 +82,7 @@ export default (app: Router) => {
     middlewares.attachCurrentUser,
     upload.single('file'),
     async (req: Request, res: Response, next: NextFunction) => {
-      const logger = Container.get('logger');
+      const logger = Container.get('logger') as Logger;
       try {
         const file = req.file;
         const session_id = req.body.session_id;
@@ -98,7 +100,7 @@ export default (app: Router) => {
 
         const result = await streamUpload(file.buffer);
 
-        const appDataSource = Container.get('appDataSource');
+        const appDataSource = Container.get('appDataSource') as DataSource;
         const repo = appDataSource.getRepository(UploadedFile);
 
         const record = repo.create({
@@ -117,7 +119,7 @@ export default (app: Router) => {
         // If attached to a session, also save a message record for image so chat messages API will return it
         if (session_id) {
           try {
-            const appDataSource2 = Container.get('appDataSource');
+            const appDataSource2 = Container.get('appDataSource') as DataSource;
             const messageRepo = appDataSource2.getRepository(require('@/models/message').Message);
             await messageRepo.save({
               session_id: session_id,

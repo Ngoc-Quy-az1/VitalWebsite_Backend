@@ -10,7 +10,7 @@ import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
 import { Logger } from 'winston';
 import {
-  getConversationMemory,
+  getConversationMemoryFromDb,
   updateConversationMemory,
 } from '@/services/conversationMemory';
 
@@ -101,7 +101,7 @@ export default (app: Router) => {
             return res.status(404).json({ message: 'Chat session not found' });
           }
         }
-        const memoryContext = verifiedSession ? getConversationMemory(userId, sessionId) : '';
+        const memoryContext = verifiedSession ? await getConversationMemoryFromDb(userId, sessionId) : '';
 
         // Forward to python chatbot_api
         const response = await axios.post(
@@ -131,8 +131,8 @@ export default (app: Router) => {
             content: answerText,
           });
 
-          await updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
-          await updateConversationMemory(config.vitalAI.chatbotApiUrl, userId, sessionId, query, answerText, logger);
+          updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
+          updateConversationMemory(config.vitalAI.chatbotApiUrl, userId, sessionId, query, answerText, logger);
         }
 
         return res.status(200).json(response.data);
@@ -177,7 +177,7 @@ export default (app: Router) => {
             return res.status(404).json({ message: 'Chat session not found' });
           }
         }
-        const memoryContext = verifiedSession ? getConversationMemory(userId, sessionId) : '';
+        const memoryContext = verifiedSession ? await getConversationMemoryFromDb(userId, sessionId) : '';
 
         // Setup headers for SSE
         res.setHeader('Content-Type', 'text/event-stream');
@@ -243,8 +243,8 @@ export default (app: Router) => {
                 content: accumulatedAnswer || 'Mình chưa tạo được câu trả lời từ hệ thống.',
               });
 
-              await updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
-              await updateConversationMemory(
+              updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
+              updateConversationMemory(
                 config.vitalAI.chatbotApiUrl,
                 userId,
                 sessionId,

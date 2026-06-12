@@ -8,7 +8,7 @@ import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
 import { UploadedFile } from '@/models/uploaded-file';
 import { OcrResult } from '@/models/ocr-result';
-import { Document } from '@/models/document';
+import { SessionMemory } from '@/models/session-memory';
 
 export default ({ appDataSource }: { appDataSource: DataSource }) => {
   try {
@@ -19,7 +19,7 @@ export default ({ appDataSource }: { appDataSource: DataSource }) => {
     Container.set('messageRepository', appDataSource.getRepository(Message));
     Container.set('uploadedFileRepository', appDataSource.getRepository(UploadedFile));
     Container.set('ocrResultRepository', appDataSource.getRepository(OcrResult));
-    Container.set('documentRepository', appDataSource.getRepository(Document));
+    Container.set('sessionMemoryRepository', appDataSource.getRepository(SessionMemory));
 
     Container.set('logger', LoggerInstance);
     Container.set('appDataSource', appDataSource);

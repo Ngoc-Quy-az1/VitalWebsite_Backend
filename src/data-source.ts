@@ -7,11 +7,9 @@ import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
 import { UploadedFile } from '@/models/uploaded-file';
 import { OcrResult } from '@/models/ocr-result';
-import { Document } from '@/models/document';
-import { DocumentChunk } from '@/models/document-chunk';
-import { ChatFeedback } from '@/models/chat-feedback';
 import { ApiLog } from '@/models/api-log';
 import { Notification } from '@/models/notification';
+import { SessionMemory } from '@/models/session-memory';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -29,11 +27,9 @@ export const AppDataSource = new DataSource({
     Message,
     UploadedFile,
     OcrResult,
-    Document,
-    DocumentChunk,
-    ChatFeedback,
     ApiLog,
     Notification,
+    SessionMemory,
   ],
   migrations: ['src/migrations/*.ts'],
   migrationsRun: true,
