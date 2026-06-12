@@ -66,7 +66,7 @@ export default (app: Router) => {
     conversation_id: sessionId || null,
     user_id: userId || null,
     memory_context: memoryContext,
-    enable_web_search: body.enable_web_search !== undefined ? body.enable_web_search : true,
+    enable_web_search: body.enable_web_search !== undefined ? body.enable_web_search : false,
   });
 
   // Endpoint /1 -> Proxy to chatbot /chat/answer (Sync QA)
@@ -180,10 +180,15 @@ export default (app: Router) => {
         const memoryContext = verifiedSession ? await getConversationMemoryFromDb(userId, sessionId) : '';
 
         // Setup headers for SSE
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Accel-Buffering', 'no');
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+        if (typeof (res as any).flushHeaders === 'function') {
+          (res as any).flushHeaders();
+        }
 
         // Request streaming from FastAPI
         const response = await axios({
@@ -198,6 +203,9 @@ export default (app: Router) => {
         // Pipe stream data in real-time
         response.data.on('data', (chunk: Buffer) => {
           res.write(chunk);
+          if (typeof (res as any).flush === 'function') {
+            (res as any).flush();
+          }
 
           // Parse token content for history saving
           const chunkStr = chunk.toString();
@@ -267,7 +275,12 @@ export default (app: Router) => {
         logger.error('🔥 error in AI Proxy /2: %o', e.message || e);
         const status = e.response?.status || 500;
         const detail = e.response?.data?.detail || e.message || 'Error occurred';
-        res.status(status).json({ detail });
+        if (res.headersSent) {
+          res.write(`event: error\ndata: ${JSON.stringify({ detail })}\n\n`);
+          res.end();
+        } else {
+          res.status(status).json({ detail });
+        }
       }
     },
   );
