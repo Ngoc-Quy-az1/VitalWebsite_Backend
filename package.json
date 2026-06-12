@@ -62,8 +62,11 @@
     "reflect-metadata": "^0.1.13",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^3.11.0",
     "typedi": "^0.8.0",
     "typeorm": "^0.3.11",
+    "typescript": "^4.9.5",
     "winston": "^3.3.3"
   },
   "devDependencies": {
@@ -84,10 +87,7 @@
     "nodemon": "^2.0.4",
     "prettier": "^2.1.2",
     "ts-jest": "^26.4.0",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^3.11.0",
-    "tslint": "^5.20.1",
-    "typescript": "^4.9.5"
+    "tslint": "^5.20.1"
   },
   "bugs": {
     "url": "https://github.com/santiq/bulletproof-nodejs/issues"
