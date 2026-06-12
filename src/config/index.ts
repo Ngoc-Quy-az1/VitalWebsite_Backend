@@ -74,8 +74,8 @@ export default {
    * VitalAI Python Backend URLs
    */
   vitalAI: {
-    chatbotApiUrl: process.env.VITALAI_CHATBOT_API_URL || 'http://localhost:8000',
-    medicalToolsApiUrl: process.env.VITALAI_MEDICAL_TOOLS_API_URL || 'http://localhost:8010',
+    chatbotApiUrl: process.env.VITALAI_CHATBOT_API_URL,
+    medicalToolsApiUrl: process.env.VITALAI_MEDICAL_TOOLS_API_URL,
   },
 
   /**
