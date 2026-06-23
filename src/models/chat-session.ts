@@ -23,6 +23,9 @@ export class ChatSession {
   @Column({ name: 'title', type: 'varchar', length: 255, nullable: true })
   title: string;
 
+  @Column({ name: 'is_pinned', type: 'boolean', default: false })
+  is_pinned: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 

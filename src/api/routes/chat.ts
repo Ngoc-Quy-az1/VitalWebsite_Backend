@@ -54,7 +54,7 @@ export default (app: Router) => {
 
         const sessions = await chatSessionRepo.find({
           where: { user_id: userId },
-          order: { created_at: 'DESC' },
+          order: { is_pinned: 'DESC', created_at: 'DESC' },
         });
 
         return res.status(200).json(sessions);
@@ -92,6 +92,42 @@ export default (app: Router) => {
         });
 
         return res.status(200).json(messages);
+      } catch (e) {
+        logger.error('🔥 error: %o', e);
+        return next(e);
+      }
+    },
+  );
+
+  route.put(
+    '/sessions/:id/pin',
+    middlewares.isAuth,
+    middlewares.attachCurrentUser,
+    celebrate({
+      body: Joi.object({
+        isPinned: Joi.boolean().required(),
+      }),
+    }),
+    async (req: Request, res: Response, next: NextFunction) => {
+      const logger: Logger = Container.get('logger');
+      try {
+        const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
+        const userId = req.currentUser.id;
+        const sessionId = req.params.id;
+        const isPinned = req.body.isPinned;
+
+        const session = await chatSessionRepo.findOne({
+          where: { id: sessionId, user_id: userId },
+        });
+
+        if (!session) {
+          return res.status(404).json({ message: 'Chat session not found' });
+        }
+
+        session.is_pinned = isPinned;
+        await chatSessionRepo.save(session);
+
+        return res.status(200).json(session);
       } catch (e) {
         logger.error('🔥 error: %o', e);
         return next(e);
