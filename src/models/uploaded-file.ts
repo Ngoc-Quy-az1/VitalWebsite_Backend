@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { User } from './user';
 import { ChatSession } from './chat-session';
-import { OcrResult } from './ocr-result';
 
 @Entity('uploaded_files')
 export class UploadedFile {
@@ -50,7 +49,4 @@ export class UploadedFile {
   @ManyToOne(() => ChatSession, (session) => session.uploadedFiles, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'session_id' })
   session: ChatSession;
-
-  @OneToMany(() => OcrResult, (ocr) => ocr.file)
-  ocrResults: OcrResult[];
 }

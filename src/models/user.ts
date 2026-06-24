@@ -9,9 +9,6 @@ import {
 import { RefreshToken } from './refresh-token';
 import { ChatSession } from './chat-session';
 import { UploadedFile } from './uploaded-file';
-import { ApiLog } from './api-log';
-import { Notification } from './notification';
-
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -63,9 +60,4 @@ export class User {
   @OneToMany(() => UploadedFile, (file) => file.user)
   uploadedFiles: UploadedFile[];
 
-  @OneToMany(() => ApiLog, (log) => log.user)
-  apiLogs: ApiLog[];
-
-  @OneToMany(() => Notification, (notif) => notif.user)
-  notifications: Notification[];
 }

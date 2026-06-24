@@ -6,9 +6,6 @@ import { RefreshToken } from '@/models/refresh-token';
 import { ChatSession } from '@/models/chat-session';
 import { Message } from '@/models/message';
 import { UploadedFile } from '@/models/uploaded-file';
-import { OcrResult } from '@/models/ocr-result';
-import { ApiLog } from '@/models/api-log';
-import { Notification } from '@/models/notification';
 import { SessionMemory } from '@/models/session-memory';
 
 export const AppDataSource = new DataSource({
@@ -26,9 +23,6 @@ export const AppDataSource = new DataSource({
     ChatSession,
     Message,
     UploadedFile,
-    OcrResult,
-    ApiLog,
-    Notification,
     SessionMemory,
   ],
   migrations: ['src/migrations/*.ts'],
