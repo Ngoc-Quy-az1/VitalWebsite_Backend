@@ -240,7 +240,7 @@ export default (app: Router) => {
                 session_id: sessionId,
                 sender_type: 'USER',
                 message_type: 'TEXT',
-                content: query,
+                content: req.body.original_query || query,
               });
 
               // Save bot answer
@@ -251,12 +251,12 @@ export default (app: Router) => {
                 content: accumulatedAnswer || 'Mình chưa tạo được câu trả lời từ hệ thống.',
               });
 
-              updateSessionTitleIfNeeded(chatSessionRepo, sessionId, query, logger);
+              updateSessionTitleIfNeeded(chatSessionRepo, sessionId, req.body.original_query || query, logger);
               updateConversationMemory(
                 config.vitalAI.chatbotApiUrl,
                 userId,
                 sessionId,
-                query,
+                req.body.original_query || query,
                 accumulatedAnswer || 'Mình chưa tạo được câu trả lời từ hệ thống.',
                 logger,
               );
