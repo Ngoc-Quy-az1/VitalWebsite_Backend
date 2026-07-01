@@ -55,6 +55,7 @@ export default (app: Router) => {
     userId: string,
     sessionId?: string,
     memoryContext = '',
+    chatHistory: any[] = [],
   ) => ({
     query: body.query,
     top_k: body.top_k,
@@ -66,6 +67,7 @@ export default (app: Router) => {
     conversation_id: sessionId || null,
     user_id: userId || null,
     memory_context: memoryContext,
+    chat_history: chatHistory,
     enable_web_search: body.enable_web_search !== undefined ? body.enable_web_search : false,
   });
 
@@ -95,18 +97,29 @@ export default (app: Router) => {
         const userId = req.currentUser.id;
         const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
         let verifiedSession: ChatSession | null = null;
+        let chatHistory = [];
         if (sessionId) {
           verifiedSession = await findUserSession(chatSessionRepo, sessionId, userId);
           if (!verifiedSession) {
             return res.status(404).json({ message: 'Chat session not found' });
           }
+          const messageRepo = Container.get('messageRepository') as Repository<Message>;
+          const dbMessages = await messageRepo.find({
+            where: { session_id: sessionId },
+            order: { created_at: 'DESC' },
+            take: 6,
+          });
+          chatHistory = dbMessages.reverse().map(msg => ({
+            role: msg.sender_type === 'USER' ? 'user' : 'assistant',
+            content: msg.content,
+          }));
         }
         const memoryContext = verifiedSession ? await getConversationMemoryFromDb(userId, sessionId) : '';
 
         // Forward to python chatbot_api
         const response = await axios.post(
           `${config.vitalAI.chatbotApiUrl}/chat/answer`,
-          buildChatbotPayload(req.body, userId, sessionId, memoryContext),
+          buildChatbotPayload(req.body, userId, sessionId, memoryContext, chatHistory),
         );
 
         // Save history in background if sessionId is provided
@@ -171,11 +184,22 @@ export default (app: Router) => {
         const userId = req.currentUser.id;
         const chatSessionRepo = Container.get('chatSessionRepository') as Repository<ChatSession>;
         let verifiedSession: ChatSession | null = null;
+        let chatHistory = [];
         if (sessionId) {
           verifiedSession = await findUserSession(chatSessionRepo, sessionId, userId);
           if (!verifiedSession) {
             return res.status(404).json({ message: 'Chat session not found' });
           }
+          const messageRepo = Container.get('messageRepository') as Repository<Message>;
+          const dbMessages = await messageRepo.find({
+            where: { session_id: sessionId },
+            order: { created_at: 'DESC' },
+            take: 6,
+          });
+          chatHistory = dbMessages.reverse().map(msg => ({
+            role: msg.sender_type === 'USER' ? 'user' : 'assistant',
+            content: msg.content,
+          }));
         }
         const memoryContext = verifiedSession ? await getConversationMemoryFromDb(userId, sessionId) : '';
 
@@ -194,7 +218,7 @@ export default (app: Router) => {
         const response = await axios({
           method: 'post',
           url: `${config.vitalAI.chatbotApiUrl}/chat/stream`,
-          data: buildChatbotPayload(req.body, userId, sessionId, memoryContext),
+          data: buildChatbotPayload(req.body, userId, sessionId, memoryContext, chatHistory),
           responseType: 'stream',
         });
 
