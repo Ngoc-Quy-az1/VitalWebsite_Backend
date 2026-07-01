@@ -66,24 +66,11 @@ export const updateConversationMemory = async (
       return;
     }
 
-    // Get current session memory record
     let sessionMemory = await sessionMemoryRepo.findOne({
       where: { session_id: sessionId, user_id: userId },
     });
 
     const previousSummary = sessionMemory ? sessionMemory.memory_summary || '' : '';
-
-    // Get all session memory records for the user to pass as previous summaries
-    const allSessionMemories = await sessionMemoryRepo.find({
-      where: { user_id: userId },
-      order: { updated_at: 'DESC' },
-    });
-
-    const otherSummaries = allSessionMemories
-      .filter((sm) => sm.session_id !== sessionId)
-      .map((sm) => sm.memory_summary || '')
-      .filter(Boolean)
-      .slice(0, 10);
 
     // Fetch messages in session created after last_message_id (or all messages if none exist yet)
     const queryBuilder = messageRepo.createQueryBuilder('message')
@@ -122,7 +109,6 @@ export const updateConversationMemory = async (
         `${chatbotApiUrl}/memory/summarize`,
         {
           previous_summary: previousSummary,
-          previous_summaries: otherSummaries,
           question: trim(compiledQuestions, 900),
           answer: trim(compiledAnswers, 1600),
         },
