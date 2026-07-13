@@ -165,4 +165,50 @@ export default (app: Router) => {
       }
     },
   );
+
+  route.post(
+    '/log-latency',
+    middlewares.isAuth,
+    middlewares.attachCurrentUser,
+    async (req: Request, res: Response, next: NextFunction) => {
+      const logger: Logger = Container.get('logger');
+      try {
+        const { query, answer, latency, totalTime, ocrTime, flowType } = req.body;
+        const fs = require('fs');
+        const path = require('path');
+        const logFile = 'd:\\Học tập\\Năm 4\\DATN\\Test\\user_chat_latency_summary.csv';
+        
+        const escapeCsv = (str: string) => {
+          if (!str) return '""';
+          const clean = String(str).replace(/"/g, '""').replace(/\r?\n/g, ' ');
+          return `"${clean}"`;
+        };
+
+        const nowStr = new Date().toLocaleString('vi-VN');
+        const recordExists = fs.existsSync(logFile);
+        
+        let header = '';
+        if (!recordExists) {
+          header = 'Timestamp,Function Type,Question,Answer Preview,Latency to First Character (s),Total Response Time (s),OCR Processing Time (s)\n';
+        }
+
+        const previewText = answer ? answer.substring(0, 150) + '...' : '';
+        const row = [
+          escapeCsv(nowStr),
+          escapeCsv(flowType || 'Hỏi đáp'),
+          escapeCsv(query || ''),
+          escapeCsv(previewText),
+          latency ? latency.toFixed(4) : '',
+          totalTime ? totalTime.toFixed(4) : '',
+          ocrTime ? ocrTime.toFixed(4) : ''
+        ].join(',') + '\n';
+
+        fs.appendFileSync(logFile, header + row, 'utf8');
+        return res.status(200).json({ success: true });
+      } catch (e) {
+        logger.error('🔥 error logging latency: %o', e);
+        return next(e);
+      }
+    }
+  );
 };

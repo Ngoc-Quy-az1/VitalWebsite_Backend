@@ -50,7 +50,7 @@ export class User {
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
 
-  // Relations
+
   @OneToMany(() => RefreshToken, (rt) => rt.user)
   refreshTokens: RefreshToken[];
 

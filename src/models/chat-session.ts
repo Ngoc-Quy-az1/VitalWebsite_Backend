@@ -11,6 +11,7 @@ import {
 import { User } from './user';
 import { Message } from './message';
 import { UploadedFile } from './uploaded-file';
+import { SessionMemory } from './session-memory';
 
 @Entity('chat_sessions')
 export class ChatSession {
@@ -41,4 +42,7 @@ export class ChatSession {
 
   @OneToMany(() => UploadedFile, (file) => file.session)
   uploadedFiles: UploadedFile[];
+
+  @OneToMany(() => SessionMemory, (memory) => memory.session)
+  memories: SessionMemory[];
 }

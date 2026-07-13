@@ -20,7 +20,7 @@ export class SessionMemory {
   @Column({ name: 'user_id', type: 'uuid' })
   user_id: string;
 
-  @Column({ name: 'session_id', type: 'uuid', unique: true })
+  @Column({ name: 'session_id', type: 'uuid' })
   session_id: string;
 
   @Column({ name: 'memory_summary', type: 'text', nullable: true })
@@ -42,7 +42,7 @@ export class SessionMemory {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToOne(() => ChatSession, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ChatSession, (session) => session.memories, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'session_id' })
   session: ChatSession;
 
